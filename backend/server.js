@@ -27,7 +27,8 @@ mongoose.connect(mongoURI)
 
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/auth',     require('./routes/authRoutes'));
+app.use('/api/orders',   require('./routes/orderRoutes'));
 
 // Fallback to index.html for unknown routes (SPA like behavior)
 app.use((req, res) => {

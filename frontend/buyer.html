@@ -241,6 +241,10 @@
             <button id="search-btn">Search</button>
         </div>
         <div class="nav-links">
+            <button id="cart-btn" class="cart-nav-btn" onclick="toggleCart()">
+                🛒 Cart
+                <span id="cart-badge" class="cart-badge">0</span>
+            </button>
             <a href="seller-auth.html" class="nav-link seller-link">🧑‍🍳 Sell on LocalNest</a>
         </div>
     </header>
@@ -333,9 +337,9 @@
                 </div>
                 <div class="how-step">
                     <div class="step-num">3</div>
-                    <span class="step-icon">💬</span>
-                    <h3>Contact the Seller</h3>
-                    <p>Click "Contact" to see the seller's number and reach them directly on WhatsApp to arrange delivery.</p>
+                    <span class="step-icon">💳</span>
+                    <h3>Add to Cart &amp; Pay</h3>
+                    <p>Add items to your cart and checkout securely right here — UPI, card, net banking or cash on delivery.</p>
                 </div>
             </div>
         </section>
@@ -418,6 +422,24 @@
 
     </main>
 
+    <!-- ─── CART DRAWER ─── -->
+    <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+    <aside id="cart-drawer" class="cart-drawer">
+        <div class="cart-header">
+            <h2>🛒 Your Cart</h2>
+            <button class="cart-close-btn" onclick="toggleCart()">✕</button>
+        </div>
+        <div id="cart-items" class="cart-items"></div>
+        <div id="cart-footer" class="cart-footer" style="display:none">
+            <div class="cart-summary">
+                <div class="cart-summary-row"><span>Subtotal</span><span id="cart-subtotal">₹0</span></div>
+                <div class="cart-summary-row"><span>Delivery</span><span>₹30</span></div>
+                <div class="cart-summary-row total"><span>Total</span><span id="cart-total">₹30</span></div>
+            </div>
+            <button class="proceed-pay-btn" onclick="openPaymentModal()">Proceed to Pay 💳</button>
+        </div>
+    </aside>
+
     <!-- ─── RICH FOOTER ─── -->
     <footer class="footer-rich">
         <div class="footer-top">
@@ -461,6 +483,117 @@
                 <a id="modal-whatsapp" href="#" target="_blank" class="btn-whatsapp">
                     💬 WhatsApp
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── PAYMENT MODAL ─── -->
+    <div id="payment-modal" class="modal-overlay pay-modal-overlay">
+        <div class="pay-modal-content">
+            <!-- Progress Steps -->
+            <div class="pay-steps">
+                <div class="pay-step active" id="pstep-1">1 Delivery</div>
+                <div class="pay-step-line"></div>
+                <div class="pay-step" id="pstep-2">2 Payment</div>
+                <div class="pay-step-line"></div>
+                <div class="pay-step" id="pstep-3">3 Confirm</div>
+            </div>
+
+            <!-- Step 1: Delivery Details -->
+            <div id="pay-step-1" class="pay-panel active">
+                <h2 class="pay-title">📦 Delivery Details</h2>
+                <div class="pay-form-grid">
+                    <div class="pay-form-group">
+                        <label for="buyer-name">Full Name</label>
+                        <input type="text" id="buyer-name" placeholder="Priya Sharma" autocomplete="name">
+                    </div>
+                    <div class="pay-form-group">
+                        <label for="buyer-phone">Mobile Number</label>
+                        <input type="tel" id="buyer-phone" placeholder="9876543210" maxlength="10">
+                    </div>
+                    <div class="pay-form-group full">
+                        <label for="buyer-address">Delivery Address</label>
+                        <input type="text" id="buyer-address" placeholder="Flat / Street / Area">
+                    </div>
+                    <div class="pay-form-group">
+                        <label for="buyer-pincode">Pincode</label>
+                        <input type="text" id="buyer-pincode" placeholder="400001" maxlength="6">
+                    </div>
+                </div>
+                <div class="pay-nav-row">
+                    <button class="pay-ghost-btn" onclick="closePaymentModal()">Cancel</button>
+                    <button class="pay-primary-btn" onclick="goPayStep(2)">Continue →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Payment Method -->
+            <div id="pay-step-2" class="pay-panel">
+                <h2 class="pay-title">💳 Choose Payment</h2>
+                <div class="pay-methods">
+                    <label class="pay-method-card" id="pm-upi">
+                        <input type="radio" name="pay-method" value="upi" checked>
+                        <span class="pm-icon">📱</span>
+                        <span class="pm-label">UPI</span>
+                    </label>
+                    <label class="pay-method-card" id="pm-card">
+                        <input type="radio" name="pay-method" value="card">
+                        <span class="pm-icon">💳</span>
+                        <span class="pm-label">Card</span>
+                    </label>
+                    <label class="pay-method-card" id="pm-netbanking">
+                        <input type="radio" name="pay-method" value="netbanking">
+                        <span class="pm-icon">🏦</span>
+                        <span class="pm-label">Net Banking</span>
+                    </label>
+                    <label class="pay-method-card" id="pm-cod">
+                        <input type="radio" name="pay-method" value="cod">
+                        <span class="pm-icon">💵</span>
+                        <span class="pm-label">Cash on Delivery</span>
+                    </label>
+                </div>
+                <!-- UPI panel -->
+                <div class="pay-sub-panel" id="sub-upi">
+                    <div class="upi-qr">📷 <span>Scan QR</span></div>
+                    <p class="pay-or">— OR enter UPI ID —</p>
+                    <input class="pay-input" type="text" id="upi-id" placeholder="yourname@upi">
+                </div>
+                <!-- Card panel -->
+                <div class="pay-sub-panel" id="sub-card" style="display:none">
+                    <input class="pay-input" type="text" id="card-num" placeholder="Card Number (16 digits)" maxlength="19">
+                    <div class="card-row">
+                        <input class="pay-input" type="text" id="card-exp" placeholder="MM/YY" maxlength="5">
+                        <input class="pay-input" type="text" id="card-cvv" placeholder="CVV" maxlength="3">
+                    </div>
+                    <input class="pay-input" type="text" id="card-name" placeholder="Name on Card">
+                </div>
+                <!-- Net Banking panel -->
+                <div class="pay-sub-panel" id="sub-netbanking" style="display:none">
+                    <select class="pay-input" id="bank-select">
+                        <option value="">— Select your bank —</option>
+                        <option>SBI</option><option>HDFC Bank</option><option>ICICI Bank</option>
+                        <option>Axis Bank</option><option>Kotak Mahindra</option><option>PNB</option>
+                    </select>
+                </div>
+                <!-- COD panel -->
+                <div class="pay-sub-panel" id="sub-cod" style="display:none">
+                    <p class="cod-note">💵 Pay in cash when your order is delivered. Easy!</p>
+                </div>
+                <div id="pay-amount-display" class="pay-amount-display"></div>
+                <div class="pay-nav-row">
+                    <button class="pay-ghost-btn" onclick="goPayStep(1)">← Back</button>
+                    <button class="pay-primary-btn" id="pay-now-btn" onclick="processPayment()">Pay Now 🔒</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="pay-step-3" class="pay-panel success-panel">
+                <div class="success-anim">
+                    <div class="success-circle">✓</div>
+                </div>
+                <h2 class="pay-title" style="color:#2A7A3B">Order Placed! 🎉</h2>
+                <p class="success-msg">Your order has been confirmed and will be delivered soon.</p>
+                <div class="order-id-box">Order ID: <strong id="placed-order-id">LN-000000</strong></div>
+                <button class="pay-primary-btn" style="margin-top:1.5rem" onclick="finishOrder()">Continue Shopping</button>
             </div>
         </div>
     </div>
