@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard | LocalNest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dash-stats { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .dash-stat-card { background: white; border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow-xs); border: 1px solid var(--border); text-align: center; }
+        .dash-stat-card .num { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .dash-stat-card .lbl { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+        .empty-dash { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .empty-dash .e-icon { font-size: 3rem; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <span class="logo-icon">🏡</span> LocalNest
+        </div>
+        <div class="nav-links">
+            <a href="buyer.html" class="nav-link">🛒 Browse Shop</a>
+            <span style="font-weight:700;color:var(--primary);font-size:0.9rem;" id="welcome-text"></span>
+            <button id="logout-btn" style="background:none;border:2px solid var(--border);color:var(--text-secondary);padding:0.45rem 1rem;border-radius:50px;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.88rem;transition:var(--transition);" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Sidebar: Add Product -->
+        <aside class="sidebar">
+            <h2>➕ Add New Product</h2>
+            <form id="add-product-form">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="p-name" placeholder="e.g. Mango Pickle" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="p-price" placeholder="e.g. 150" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="p-category" required>
+                        <option value="">Select category...</option>
+                        <option value="Snacks">🍪 Snacks</option>
+                        <option value="Sweets">🍬 Sweets</option>
+                        <option value="Pickles">🥢 Pickles</option>
+                        <option value="Handicrafts">🎨 Handicrafts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Image URL (Optional)</label>
+                    <input type="url" id="p-image" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Shop Pincode</label>
+                    <input type="text" id="p-pincode" placeholder="6-digit pincode" pattern="[0-9]{6}" required>
+                </div>
+                <button type="submit" class="primary-btn" style="width:100%;margin-top:0.5rem;" id="post-btn">
+                    Post Product
+                </button>
+            </form>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="dash-welcome">
+                <div class="dash-welcome-icon">🏪</div>
+                <div>
+                    <h3 id="dash-shop-name">Your Shop</h3>
+                    <p id="dash-seller-id"></p>
+                </div>
+            </div>
+
+            <div class="dash-stats">
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-products">—</div>
+                    <div class="lbl">Products Listed</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-pincodes">—</div>
+                    <div class="lbl">Service Zones</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-inquiries" style="color:var(--secondary)">—</div>
+                    <div class="lbl">Total Buyer Contacts</div>
+                </div>
+            </div>
+
+            <h2>Your Products</h2>
+            <div id="seller-product-grid" class="product-grid"></div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

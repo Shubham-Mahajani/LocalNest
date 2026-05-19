@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop Local | LocalNest</title>
+    <meta name="description" content="Discover homemade and local products near you. Search by pincode and connect with nearby sellers.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── HERO OVERRIDE ── */
+        .hero-section {
+            background: none;
+            padding: 0;
+            min-height: auto;
+            flex-direction: column;
+            gap: 0;
+        }
+        .hero-full {
+            position: relative;
+            width: 100%;
+            height: 92vh;
+            min-height: 560px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .hero-bg {
+            position: absolute; inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&q=85&w=1800');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.45) saturate(1.1);
+            transform: scale(1.03);
+            transition: transform 8s ease;
+        }
+        .hero-bg.loaded { transform: scale(1); }
+        .hero-full-content {
+            position: relative; z-index: 2;
+            color: white;
+            padding: 0 8%;
+            max-width: 760px;
+        }
+        .hero-badge-white {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(8px);
+            color: white; padding: 0.4rem 1rem;
+            border-radius: 50px; font-size: 0.82rem; font-weight: 700;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: fadeInDown 0.6s ease both;
+        }
+        .hero-full-content h1 {
+            font-size: 4.2rem; font-weight: 900;
+            line-height: 1.05; letter-spacing: -2px;
+            margin-bottom: 1.2rem; color: white;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.7s ease both;
+        }
+        .hero-full-content h1 .highlight { color: var(--accent); }
+        .hero-full-content h1 .highlight::after { display: none; }
+        .hero-full-content > p {
+            font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 520px;
+            margin-bottom: 2.2rem; line-height: 1.7;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.8s ease both;
+        }
+        .hero-cta-row {
+            display: flex; gap: 1rem; align-items: center;
+            animation: fadeInUp 0.9s ease both;
+        }
+        .btn-outline-white {
+            padding: 1rem 2rem; border-radius: 50px;
+            border: 2px solid rgba(255,255,255,0.6);
+            color: white; background: transparent;
+            font-weight: 700; font-size: 1rem; cursor: pointer;
+            transition: var(--transition); font-family: 'Outfit', sans-serif;
+        }
+        .btn-outline-white:hover { background: rgba(255,255,255,0.15); border-color: white; }
+
+        .hero-stats-bar {
+            background: white;
+            display: flex;
+            padding: 1.5rem 8%;
+            gap: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .hero-stat-item {
+            flex: 1; text-align: center;
+            padding: 0.8rem 1rem;
+            border-right: 1px solid var(--border);
+        }
+        .hero-stat-item:last-child { border-right: none; }
+        .hero-stat-num { font-size: 2rem; font-weight: 900; color: var(--primary); }
+        .hero-stat-lbl { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.2rem; }
+
+        /* ── HOW IT WORKS ── */
+        .how-section {
+            padding: 5rem 8%;
+            background: linear-gradient(135deg, #fff8f5 0%, #f8f5f1 100%);
+        }
+        .how-section h2 { font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 0.5rem; }
+        .how-section .sub { text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1rem; }
+        .how-steps {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 2rem; max-width: 900px; margin: 0 auto;
+        }
+        .how-step {
+            background: white; border-radius: var(--radius-lg);
+            padding: 2rem 1.5rem; text-align: center;
+            box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+            transition: var(--transition); position: relative;
+        }
+        .how-step:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+        .step-num {
+            position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--primary); color: white;
+            font-size: 0.82rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .step-icon { font-size: 2.8rem; margin-bottom: 1rem; display: block; }
+        .how-step h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .how-step p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+
+        /* ── TRUST BAND ── */
+        .trust-band {
+            background: var(--text-primary);
+            padding: 1.2rem 8%;
+            display: flex; justify-content: center; gap: 3rem;
+            flex-wrap: nowrap; overflow-x: auto;
+        }
+        .trust-item {
+            color: white; display: flex; align-items: center;
+            gap: 0.6rem; font-size: 0.88rem; font-weight: 600; opacity: 0.9;
+            white-space: nowrap;
+        }
+        .trust-item span { font-size: 1.1rem; }
+
+        /* ── WHY LOCAL ── */
+        .why-section {
+            padding: 5rem 8%;
+            display: flex; gap: 4rem; align-items: center;
+            flex-wrap: wrap;
+        }
+        .why-img {
+            flex: 1; min-width: 280px; border-radius: var(--radius-xl);
+            overflow: hidden; box-shadow: var(--shadow-lg);
+            height: 420px;
+        }
+        .why-img img { width: 100%; height: 100%; object-fit: cover; }
+        .why-content { flex: 1; min-width: 280px; }
+        .why-content h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.5px; }
+        .why-content > p { color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.7; }
+        .why-points { display: flex; flex-direction: column; gap: 1rem; }
+        .why-point {
+            display: flex; gap: 1rem; align-items: flex-start;
+            background: white; padding: 1rem 1.2rem;
+            border-radius: var(--radius); border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .why-point:hover { border-color: rgba(240,106,75,0.3); transform: translateX(4px); }
+        .why-point-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .why-point h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .why-point p { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* ── MARQUEE / TICKER ── */
+        .marquee-section {
+            background: var(--primary);
+            padding: 0.85rem 0; overflow: hidden;
+        }
+        .marquee-track {
+            display: flex; gap: 3rem;
+            animation: marquee 22s linear infinite;
+            white-space: nowrap;
+        }
+        .marquee-item {
+            color: white; font-weight: 700; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;
+        }
+        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* ── CATEGORY SECTION ── */
+        .categories { padding: 4rem 8%; }
+        .categories .section-header { margin-bottom: 2rem; }
+
+        /* ── PRODUCTS SECTION ── */
+        .products-section { padding: 1rem 8% 5rem; }
+
+        /* ── FOOTER ── */
+        .footer-rich {
+            background: var(--text-primary);
+            color: rgba(255,255,255,0.7);
+            padding: 3rem 8% 1.5rem;
+        }
+        .footer-top {
+            display: flex; gap: 3rem; flex-wrap: wrap; margin-bottom: 2rem;
+        }
+        .footer-brand { flex: 1.5; min-width: 200px; }
+        .footer-brand .logo { color: white; margin-bottom: 0.8rem; }
+        .footer-brand p { font-size: 0.88rem; line-height: 1.7; opacity: 0.7; }
+        .footer-col { flex: 1; min-width: 140px; }
+        .footer-col h4 { color: white; font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
+        .footer-col a { display: block; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.85rem; margin-bottom: 0.5rem; transition: var(--transition); }
+        .footer-col a:hover { color: var(--primary); }
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 1.2rem; text-align: center; font-size: 0.82rem; opacity: 0.5;
+        }
+
+        @media (max-width: 900px) {
+            .hero-full-content h1 { font-size: 2.8rem; }
+            .how-steps { grid-template-columns: 1fr; max-width: 360px; }
+            .why-section { flex-direction: column; padding: 3rem 5%; }
+            .why-img { height: 260px; width: 100%; }
+            .hero-stats-bar { flex-wrap: wrap; gap: 1rem; }
+            .trust-band { gap: 2rem; }
+        }
+        @media (max-width: 600px) {
+            .hero-full { height: 80vh; }
+            .hero-full-content { padding: 0 5%; }
+            .hero-full-content h1 { font-size: 2rem; letter-spacing: -0.5px; }
+            .hero-cta-row { flex-direction: column; }
+            .categories { padding: 3rem 5%; }
+            .products-section { padding: 1rem 5% 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── NAVBAR ─── -->
+    <header class="navbar">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <span class="logo-icon">🏡</span> LocalNest
+        </div>
+        <div class="location-picker">
+            <span class="location-icon">📍</span>
+            <input type="text" id="pincode-input" placeholder="Enter pincode, e.g. 400001">
+            <button id="search-btn">Search</button>
+        </div>
+        <div class="nav-links">
+            <a href="seller-auth.html" class="nav-link seller-link">🧑‍🍳 Sell on LocalNest</a>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ─── FULL-BLEED HERO ─── -->
+        <section class="hero-section">
+            <div class="hero-full">
+                <div class="hero-bg" id="hero-bg"></div>
+                <div class="hero-full-content">
+                    <div class="hero-badge-white">🌿 Hyper-Local · Homemade · Trusted</div>
+                    <h1>Your Neighbour's<br>Kitchen is a <span class="highlight">Shop</span></h1>
+                    <p>Discover authentic snacks, artisanal pickles, festival sweets & handcrafted goods — all made locally, delivered with love.</p>
+                    <div class="hero-cta-row">
+                        <button class="primary-btn" style="font-size:1rem;" onclick="document.querySelector('.categories').scrollIntoView({behavior:'smooth'})">
+                            Shop Now 🛒
+                        </button>
+                        <button class="btn-outline-white" onclick="document.querySelector('.how-section').scrollIntoView({behavior:'smooth'})">
+                            How it works ↓
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="hero-stats-bar">
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num">500+</div>
+                    <div class="hero-stat-lbl">Local Sellers</div>
+                </div>
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num">2,000+</div>
+                    <div class="hero-stat-lbl">Products Listed</div>
+                </div>
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num">50+</div>
+                    <div class="hero-stat-lbl">Cities Covered</div>
+                </div>
+                <div class="hero-stat-item">
+                    <div class="hero-stat-num">₹0</div>
+                    <div class="hero-stat-lbl">Platform Fees</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── MARQUEE ─── -->
+        <div class="marquee-section">
+            <div class="marquee-track" id="marquee-track">
+                <span class="marquee-item">🍪 Homemade Snacks</span>
+                <span class="marquee-item">🥭 Mango Pickle</span>
+                <span class="marquee-item">🍬 Diwali Sweets</span>
+                <span class="marquee-item">🎨 Handcrafted Diyas</span>
+                <span class="marquee-item">🫙 Amla Pickle</span>
+                <span class="marquee-item">🍌 Banana Chips</span>
+                <span class="marquee-item">🪔 Festival Items</span>
+                <span class="marquee-item">🧆 Chakli & Murukku</span>
+                <span class="marquee-item">🍫 Homemade Barfi</span>
+                <span class="marquee-item">🌶️ Spicy Mix</span>
+                <!-- duplicate for seamless loop -->
+                <span class="marquee-item">🍪 Homemade Snacks</span>
+                <span class="marquee-item">🥭 Mango Pickle</span>
+                <span class="marquee-item">🍬 Diwali Sweets</span>
+                <span class="marquee-item">🎨 Handcrafted Diyas</span>
+                <span class="marquee-item">🫙 Amla Pickle</span>
+                <span class="marquee-item">🍌 Banana Chips</span>
+                <span class="marquee-item">🪔 Festival Items</span>
+                <span class="marquee-item">🧆 Chakli & Murukku</span>
+                <span class="marquee-item">🍫 Homemade Barfi</span>
+                <span class="marquee-item">🌶️ Spicy Mix</span>
+            </div>
+        </div>
+
+        <!-- ─── HOW IT WORKS ─── -->
+        <section class="how-section" id="how-section">
+            <h2>How LocalNest Works</h2>
+            <p class="sub">Three simple steps to discover and connect with local sellers</p>
+            <div class="how-steps">
+                <div class="how-step">
+                    <div class="step-num">1</div>
+                    <span class="step-icon">📍</span>
+                    <h3>Enter Your Pincode</h3>
+                    <p>Type your pincode in the search bar to discover sellers and products available in your exact neighborhood.</p>
+                </div>
+                <div class="how-step">
+                    <div class="step-num">2</div>
+                    <span class="step-icon">🔍</span>
+                    <h3>Browse & Choose</h3>
+                    <p>Filter by category — Snacks, Sweets, Pickles or Handicrafts — and pick the product you love.</p>
+                </div>
+                <div class="how-step">
+                    <div class="step-num">3</div>
+                    <span class="step-icon">💬</span>
+                    <h3>Contact the Seller</h3>
+                    <p>Click "Contact" to see the seller's number and reach them directly on WhatsApp to arrange delivery.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── TRUST BAND ─── -->
+        <div class="trust-band">
+            <div class="trust-item"><span>✅</span> 100% Homemade</div>
+            <div class="trust-item"><span>🔒</span> No Hidden Charges</div>
+            <div class="trust-item"><span>📍</span> Hyperlocal Discovery</div>
+            <div class="trust-item"><span>🤝</span> Direct Seller Contact</div>
+            <div class="trust-item"><span>💚</span> Support Local MSMEs</div>
+        </div>
+
+        <!-- ─── CATEGORIES ─── -->
+        <section class="categories">
+            <div class="section-header">
+                <h2>Shop by Category</h2>
+            </div>
+            <div class="category-grid">
+                <div class="category-card" data-category="Snacks">
+                    <span class="cat-icon">🍪</span>
+                    <h3>Snacks</h3>
+                </div>
+                <div class="category-card" data-category="Sweets">
+                    <span class="cat-icon">🍬</span>
+                    <h3>Sweets</h3>
+                </div>
+                <div class="category-card" data-category="Pickles">
+                    <span class="cat-icon">🥢</span>
+                    <h3>Pickles</h3>
+                </div>
+                <div class="category-card" data-category="Handicrafts">
+                    <span class="cat-icon">🎨</span>
+                    <h3>Handicrafts</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── NEARBY PRODUCTS ─── -->
+        <section class="products-section">
+            <div class="section-header">
+                <h2>Nearby Products</h2>
+            </div>
+            <div id="product-grid" class="product-grid"></div>
+        </section>
+
+        <!-- ─── WHY LOCAL ─── -->
+        <section class="why-section">
+            <div class="why-img">
+                <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=800" alt="Homemade cooking" loading="lazy">
+            </div>
+            <div class="why-content">
+                <h2>Why Buy <span style="color:var(--primary)">Local?</span></h2>
+                <p>Every product on LocalNest is made by a real person in your community — with care, tradition, and quality you can taste.</p>
+                <div class="why-points">
+                    <div class="why-point">
+                        <div class="why-point-icon">🌿</div>
+                        <div>
+                            <h4>Fresh & Authentic</h4>
+                            <p>No preservatives. Made in small batches with traditional recipes passed down generations.</p>
+                        </div>
+                    </div>
+                    <div class="why-point">
+                        <div class="why-point-icon">💰</div>
+                        <div>
+                            <h4>Fair Prices, No Middlemen</h4>
+                            <p>You pay the seller directly. No platform commission means better pricing for everyone.</p>
+                        </div>
+                    </div>
+                    <div class="why-point">
+                        <div class="why-point-icon">🤝</div>
+                        <div>
+                            <h4>Strengthen Your Community</h4>
+                            <p>Every purchase supports a local family business and keeps the neighbourhood economy growing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ─── RICH FOOTER ─── -->
+    <footer class="footer-rich">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="logo">🏡 LocalNest</div>
+                <p>A hyper-local digital platform connecting buyers with home-based sellers — making local shopping simple, accessible, and community-driven.</p>
+            </div>
+            <div class="footer-col">
+                <h4>For Buyers</h4>
+                <a href="#">How it Works</a>
+                <a href="#">Search by Pincode</a>
+                <a href="#">Browse Categories</a>
+            </div>
+            <div class="footer-col">
+                <h4>For Sellers</h4>
+                <a href="seller-auth.html">Register Your Shop</a>
+                <a href="seller-auth.html">Seller Login</a>
+                <a href="dashboard.html">Seller Dashboard</a>
+            </div>
+            <div class="footer-col">
+                <h4>About</h4>
+                <a href="#">Our Mission</a>
+                <a href="#">Supporting MSMEs</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 LocalNest. Built for the community. 🏡 Made with ❤️ in India.
+        </div>
+    </footer>
+
+    <!-- ─── CONTACT MODAL ─── -->
+    <div id="contact-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">🤝</div>
+            <h2 id="modal-seller-name">Seller Name</h2>
+            <p>Contact this seller directly to purchase or get more details about the product.</p>
+            <div class="modal-phone" id="modal-seller-phone">+91 0000000000</div>
+            <div class="modal-actions">
+                <button id="modal-close" class="btn-close">✕ Close</button>
+                <a id="modal-whatsapp" href="#" target="_blank" class="btn-whatsapp">
+                    💬 WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Subtle parallax/load effect on hero bg
+        window.addEventListener('load', () => {
+            document.getElementById('hero-bg')?.classList.add('loaded');
+        });
+    </script>
+    <script src="modalHelper.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Portal | LocalNest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container { max-width: 400px; margin: 4rem auto; background: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow-md); }
+        .auth-tabs { display: flex; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; }
+        .auth-tab { flex: 1; text-align: center; padding: 1rem; cursor: pointer; font-weight: 600; color: var(--text-secondary); transition: var(--transition); }
+        .auth-tab.active { border-bottom: 2px solid var(--primary); color: var(--primary); }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; }
+        .form-group input { width: 100%; padding: 0.8rem; border: 1px solid #e5e7eb; border-radius: 6px; outline: none; transition: var(--transition); }
+        .form-group input:focus { border-color: var(--primary); }
+        
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        
+        .btn-full { width: 100%; padding: 1rem; }
+        
+        #registration-success { display: none; background: #e6f6e6; color: #2f9e44; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem; text-align: center; }
+        #seller-id-display { font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo" onclick="window.location.href='index.html'">
+            <span class="logo-icon">🏡</span> LocalNest
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">← Home</a>
+            <a href="buyer.html" class="nav-link">Browse as Buyer</a>
+        </div>
+    </header>
+
+    <div class="auth-container">
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tab-login">Login</div>
+            <div class="auth-tab" id="tab-register">Register Shop</div>
+        </div>
+
+        <div id="registration-success">
+            ✅ Registered! Your Unique Seller ID is:<br>
+            <div id="seller-id-display"></div>
+            <small>Copy and save this ID — you need it to login.</small><br>
+            <button onclick="document.getElementById('tab-login').click()" style="margin-top:1rem; background:var(--primary); color:white; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-weight:600;">Proceed to Login →</button>
+        </div>
+
+        <form id="login-form" class="auth-form active">
+            <h2>Welcome Back</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Login with your Unique ID</p>
+            <div class="form-group">
+                <label>Unique Seller ID</label>
+                <input type="text" id="login-id" placeholder="e.g. NEST-1234" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit" class="primary-btn btn-full">Login</button>
+        </form>
+
+        <form id="register-form" class="auth-form">
+            <h2>Open Your Shop</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">Start selling your homemade items locally.</p>
+            <div class="form-group">
+                <label>Shop / Seller Name</label>
+                <input type="text" id="reg-name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number (WhatsApp)</label>
+                <input type="text" id="reg-phone" required pattern="[0-9]{10}" title="10 digit phone number">
+            </div>
+            <div class="form-group">
+                <label>Primary Service Pincode</label>
+                <input type="text" id="reg-pin1" required pattern="[0-9]{6}" title="6 digit pincode">
+            </div>
+            <div class="form-group">
+                <label>Secondary Pincode (Optional)</label>
+                <input type="text" id="reg-pin2" pattern="[0-9]{6}">
+            </div>
+            <div class="form-group">
+                <label>Choose a Password</label>
+                <input type="password" id="reg-password" required>
+            </div>
+            <button type="submit" class="primary-btn btn-full">Register Account</button>
+        </form>
+    </div>
+
+    <script src="seller-auth.js"></script>
+</body>
+</html>
