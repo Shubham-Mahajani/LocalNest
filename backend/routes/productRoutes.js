@@ -72,4 +72,22 @@ router.patch('/:id/contact', async (req, res) => {
     }
 });
 
+// DELETE remove a product by ID
+router.delete('/:id', async (req, res) => {
+    try {
+        if (store.dbConnected) {
+            const deleted = await Product.findByIdAndDelete(req.params.id);
+            if (!deleted) return res.status(404).json({ message: 'Product not found' });
+            res.json({ message: 'Product deleted successfully' });
+        } else {
+            const idx = store.products.findIndex(p => p._id === req.params.id);
+            if (idx === -1) return res.status(404).json({ message: 'Product not found' });
+            store.products.splice(idx, 1);
+            res.json({ message: 'Product deleted successfully' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;

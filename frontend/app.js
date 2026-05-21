@@ -7,6 +7,65 @@ const CATEGORY_IMAGES = {
     "default":     "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop&q=80"
 };
 
+// ─── Product Name Keyword → Specific Image map ────────────────────────────────
+// Each entry: [keyword(s)] → image URL. Keywords are matched against product name (case-insensitive).
+const PRODUCT_NAME_IMAGES = [
+    // Sweets
+    { keywords: ["gulab jamun", "gulabjamun"],          url: "https://images.unsplash.com/photo-1666606374792-89997e9b9b27?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["ladoo", "ladu", "laddu"],             url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["barfi", "barfee", "burfi"],           url: "https://images.unsplash.com/photo-1601303516534-bf4d3b97a5e5?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["halwa", "halva"],                     url: "https://images.unsplash.com/photo-1631452180775-5e2bceb36a8e?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["jalebi"],                             url: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["kheer"],                              url: "https://images.unsplash.com/photo-1666606374792-89997e9b9b27?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["rasgulla", "rasogolla"],              url: "https://images.unsplash.com/photo-1666606374792-89997e9b9b27?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["peda"],                               url: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["mithai", "sweets combo", "sweet box"],url: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["chocolate"],                         url: "https://images.unsplash.com/photo-1511381939415-e44015466834?w=600&auto=format&fit=crop&q=80" },
+    // Pickles
+    { keywords: ["mango pickle", "aam achar", "aam ka achar"], url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["amla pickle", "amla achar"],          url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["lemon pickle", "nimbu achar"],        url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["chilli pickle", "mirchi achar"],      url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["mixed pickle"],                       url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["achar", "pickle"],                   url: "https://images.unsplash.com/photo-1599021419847-d8a7a6aba5b4?w=600&auto=format&fit=crop&q=80" },
+    // Snacks
+    { keywords: ["murukku", "chakli"],                  url: "https://images.unsplash.com/photo-1606312619070-d48b8b55f3ba?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["banana chips", "banana chip"],        url: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["chivda", "chuda", "poha mix"],        url: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["mathri", "namkeen"],                  url: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["samosa"],                             url: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["pakora", "bhajiya"],                  url: "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["chips"],                              url: "https://images.unsplash.com/photo-1621447504864-d8686e12698c?w=600&auto=format&fit=crop&q=80" },
+    // Handicrafts
+    { keywords: ["diya", "diyas", "dia"],               url: "https://images.unsplash.com/photo-1604823779688-e9bac5e7f49c?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["candle", "scented candle"],           url: "https://images.unsplash.com/photo-1608181831718-c9bf0c4b3a35?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["pottery", "pot", "clay"],             url: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["jewellery", "jewelry", "necklace", "bangle", "bracelet"], url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["painting", "wall art"],               url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["basket", "bamboo"],                   url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80" },
+    { keywords: ["embroidery", "crochet", "knitting"],  url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80" },
+];
+
+/**
+ * Returns the best image URL for a product.
+ * Priority: seller-provided URL → product name keyword match → category fallback.
+ */
+function getProductImage(p) {
+    // 1. Seller provided a valid image URL
+    if (p.imageUrl && p.imageUrl.startsWith('http') && !p.imageUrl.includes('placeholder')) {
+        return p.imageUrl;
+    }
+    // 2. Match product name against known keywords
+    const nameLower = (p.name || '').toLowerCase();
+    for (const entry of PRODUCT_NAME_IMAGES) {
+        if (entry.keywords.some(kw => nameLower.includes(kw))) {
+            return entry.url;
+        }
+    }
+    // 3. Fall back to category image
+    return CATEGORY_IMAGES[p.category] || CATEGORY_IMAGES.default;
+}
+
 const DELIVERY_FEE = 30;
 
 // ─── Cart State (localStorage) ────────────────────────────────────────────────
@@ -278,10 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => renderProducts(products), 300);
     }
 
-    function getImage(p) {
-        if (p.imageUrl && p.imageUrl.startsWith('http') && !p.imageUrl.includes('placeholder')) return p.imageUrl;
-        return CATEGORY_IMAGES[p.category] || CATEGORY_IMAGES.default;
-    }
+    function getImage(p) { return getProductImage(p); }
 
     function renderProducts(products) {
         productGrid.innerHTML = '';
