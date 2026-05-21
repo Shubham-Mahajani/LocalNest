@@ -71,6 +71,21 @@ const DELIVERY_FEE = 30;
 // ─── Cart State (localStorage) ────────────────────────────────────────────────
 function loadCart()   { try { return JSON.parse(localStorage.getItem('ln_cart') || '[]'); } catch { return []; } }
 function saveCart(c)  { localStorage.setItem('ln_cart', JSON.stringify(c)); }
+function loadSavedOrders() {
+    try { return JSON.parse(localStorage.getItem('ln_orders_local') || '[]'); }
+    catch { return []; }
+}
+function saveSavedOrders(orders) {
+    localStorage.setItem('ln_orders_local', JSON.stringify(orders));
+}
+function saveLocalOrder(order) {
+    const orders = loadSavedOrders().filter(o => o.orderId !== order.orderId);
+    orders.unshift(order);
+    saveSavedOrders(orders.slice(0, 20));
+}
+function findLocalOrder(orderId) {
+    return loadSavedOrders().find(o => o.orderId === orderId);
+}
 
 let cart = loadCart();
 
@@ -105,6 +120,17 @@ function updateQty(id, delta) {
 function getSubtotal() { return cart.reduce((s, i) => s + i.price * i.qty, 0); }
 function getTotalItems() { return cart.reduce((s, i) => s + i.qty, 0); }
 
+function getServiceModeLabel(mode) {
+    const normalized = (mode || 'whatsapp').toLowerCase();
+    if (normalized === 'pickup') return '📍 Pickup only';
+    if (normalized === 'delivery') return '🚚 Delivery available';
+    return '💬 WhatsApp order';
+}
+
+function canOrderProduct(mode) {
+    return (mode || 'whatsapp').toLowerCase() === 'delivery';
+}
+
 function updateCartBadge(bump = false) {
     const badge = document.getElementById('cart-badge');
     if (!badge) return;
@@ -114,6 +140,290 @@ function updateCartBadge(bump = false) {
         void badge.offsetWidth; // reflow
         badge.classList.add('bump');
     }
+}
+
+function formatOrderStatus(status) {
+    return (status || 'placed').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getDeliveryStageIndex(status) {
+    const normalized = (status || 'placed').toLowerCase();
+    if (normalized === 'placed') return 0;
+    if (normalized === 'processing') return 1;
+    if (normalized === 'dispatched') return 2;
+    if (normalized === 'delivered') return 3;
+    return -1;
+}
+
+function renderTrackedOrder(order) {
+    const result = document.getElementById('track-order-result');
+    if (!result) return;
+
+    const items = Array.isArray(order.items) ? order.items : [];
+    const stageIndex = getDeliveryStageIndex(order.status);
+    const stages = [
+        { key: 'placed', label: 'Placed' },
+        { key: 'processing', label: 'Processing' },
+        { key: 'dispatched', label: 'Dispatched' },
+        { key: 'delivered', label: 'Delivered' }
+    ];
+    result.innerHTML = `
+        <div class="track-result-card">
+            <div class="track-result-top">
+                <div>
+                    <div class="track-order-id">${order.orderId || 'Unknown Order'}</div>
+                    <div class="track-order-sub">Delivery status for ${order.buyerName || 'Buyer'}</div>
+                </div>
+                <div class="track-status-pill">${formatOrderStatus(order.status)}</div>
+            </div>
+
+            <div class="track-status-panel">
+                <div class="track-status-panel-head">
+                    <div>
+                        <span class="track-status-kicker">Current Delivery Status</span>
+                        <strong>${formatOrderStatus(order.status)}</strong>
+                    </div>
+                    <div class="track-status-detail">${formatOrderStatus(order.paymentStatus)} payment</div>
+                </div>
+                <div class="track-progress" aria-label="Delivery progress">
+                    ${stages.map((stage, index) => `
+                        <div class="track-progress-step ${index <= stageIndex ? 'active' : ''}">
+                            <span class="track-progress-dot">${index + 1}</span>
+                            <span class="track-progress-label">${stage.label}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="track-meta-grid">
+                <div class="track-meta">
+                    <span>Status</span>
+                    <strong>${formatOrderStatus(order.status)}</strong>
+                </div>
+                <div class="track-meta">
+                    <span>Payment</span>
+                    <strong>${formatOrderStatus(order.paymentStatus)}</strong>
+                </div>
+                <div class="track-meta">
+                    <span>Method</span>
+                    <strong>${(order.paymentMethod || 'upi').toUpperCase()}</strong>
+                </div>
+                <div class="track-meta">
+                    <span>Total</span>
+                    <strong>₹${order.grandTotal ?? 0}</strong>
+                </div>
+            </div>
+
+            <div class="track-items">
+                <div class="track-items-title">Items</div>
+                ${items.map(item => `
+                    <div class="track-item-row">
+                        <div>
+                            <div class="track-item-name">${item.name}</div>
+                            <div class="track-item-seller">${item.sellerName || 'Local seller'}</div>
+                        </div>
+                        <div class="track-item-qty">x${item.qty}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="track-address">
+                <div class="track-items-title">Delivery To</div>
+                <p>${order.buyerAddress || 'Address not available'} · Pincode ${order.buyerPincode || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+}
+
+function renderTrackError(message) {
+    const result = document.getElementById('track-order-result');
+    if (!result) return;
+    result.innerHTML = `
+        <div class="track-empty track-error">
+            <div class="track-empty-icon">⚠️</div>
+            <p>${message}</p>
+        </div>
+    `;
+}
+
+function normalizeTrackedOrder(order) {
+    return {
+        ...order,
+        status: order.status || 'placed',
+        paymentStatus: order.paymentStatus || 'pending',
+        paymentMethod: order.paymentMethod || 'upi',
+        items: Array.isArray(order.items) ? order.items : [],
+    };
+}
+
+function loadSavedInquiries() {
+    try { return JSON.parse(localStorage.getItem('ln_inquiries_local') || '[]'); }
+    catch { return []; }
+}
+
+function saveSavedInquiries(inquiries) {
+    localStorage.setItem('ln_inquiries_local', JSON.stringify(inquiries.slice(0, 50)));
+}
+
+function saveLocalInquiry(inquiry) {
+    const incomingIds = new Set([inquiry.inquiryId, inquiry.clientInquiryId].filter(Boolean));
+    const inquiries = loadSavedInquiries().filter(i => {
+        const localIds = [i.inquiryId, i.clientInquiryId].filter(Boolean);
+        return !localIds.some(id => incomingIds.has(id));
+    });
+    inquiries.unshift(inquiry);
+    saveSavedInquiries(inquiries);
+}
+
+function normalizeTrackedInquiry(inquiry) {
+    return {
+        ...inquiry,
+        inquiryId: inquiry.inquiryId || inquiry.clientInquiryId || 'INQ-UNKNOWN',
+        status: inquiry.status || 'new',
+        serviceMode: inquiry.serviceMode || 'whatsapp',
+        createdAt: inquiry.createdAt || new Date().toISOString(),
+    };
+}
+
+function formatInquiryStatus(status) {
+    return (status || 'new').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function getInquiryStatusClass(status) {
+    const normalized = (status || 'new').toLowerCase();
+    if (normalized === 'contacted') return 'status-contacted';
+    if (normalized === 'closed') return 'status-closed';
+    return 'status-new';
+}
+
+function formatInquiryTime(createdAt) {
+    if (!createdAt) return 'Recently';
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return 'Recently';
+    return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function syncInquiryWithServer(inquiry) {
+    if (!inquiry?.inquiryId) return normalizeTrackedInquiry(inquiry || {});
+
+    try {
+        const res = await fetch(`/api/inquiries/${encodeURIComponent(inquiry.inquiryId)}`);
+        if (!res.ok) return normalizeTrackedInquiry(inquiry);
+        const data = await res.json().catch(() => null);
+        if (!data) return normalizeTrackedInquiry(inquiry);
+
+        const merged = normalizeTrackedInquiry({
+            ...inquiry,
+            ...data,
+            inquiryId: data.inquiryId || inquiry.inquiryId,
+            status: data.status || inquiry.status || 'new',
+        });
+        saveLocalInquiry(merged);
+        return merged;
+    } catch {
+        return normalizeTrackedInquiry(inquiry);
+    }
+}
+
+function renderInquiryCard(inquiry) {
+    const phoneDigits = String(inquiry.sellerPhone || '').replace(/\D/g, '');
+    const whatsappLink = phoneDigits ? `https://wa.me/91${phoneDigits}` : '#';
+    return `
+        <div class="request-card">
+            <div class="request-top">
+                <div>
+                    <div class="request-title">${inquiry.productName || 'Local product'}</div>
+                    <div class="request-seller">Seller: ${inquiry.sellerName || 'Local seller'}</div>
+                </div>
+                <div class="request-status-pill ${getInquiryStatusClass(inquiry.status)}">${formatInquiryStatus(inquiry.status)}</div>
+            </div>
+
+            <div class="request-meta-grid">
+                <div class="request-meta">
+                    <span>Inquiry ID</span>
+                    <strong>${inquiry.inquiryId || 'Pending'}</strong>
+                </div>
+                <div class="request-meta">
+                    <span>Service Mode</span>
+                    <strong>${getServiceModeLabel(inquiry.serviceMode)}</strong>
+                </div>
+                <div class="request-meta">
+                    <span>Created</span>
+                    <strong>${formatInquiryTime(inquiry.createdAt)}</strong>
+                </div>
+                <div class="request-meta">
+                    <span>Status</span>
+                    <strong>${formatInquiryStatus(inquiry.status)}</strong>
+                </div>
+            </div>
+
+            <div class="request-actions">
+                <a class="request-chat-btn ${phoneDigits ? '' : 'disabled'}"
+                   href="${whatsappLink}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   ${phoneDigits ? '' : 'aria-disabled="true" tabindex="-1"'}>Open WhatsApp</a>
+                <button class="request-copy-btn" type="button" data-request-id="${inquiry.inquiryId || ''}">Copy ID</button>
+            </div>
+        </div>
+    `;
+}
+
+async function renderBuyerRequests() {
+    const result = document.getElementById('buyer-requests-result');
+    if (!result) return;
+
+    const inquiries = loadSavedInquiries().map(normalizeTrackedInquiry);
+    if (!inquiries.length) {
+        result.innerHTML = `
+            <div class="track-empty">
+                <div class="track-empty-icon">💬</div>
+                <p>Your recent seller requests will show up here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    result.innerHTML = `
+        <div class="track-empty requests-loading">
+            <div class="track-empty-icon">⏳</div>
+            <p>Refreshing your requests...</p>
+        </div>
+    `;
+
+    const synced = await Promise.all(inquiries.map(syncInquiryWithServer));
+    const deduped = Array.from(new Map(
+        synced
+            .map(item => [item.inquiryId || item.clientInquiryId || `${item.productId || 'product'}-${item.createdAt || Date.now()}`, item])
+    ).values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    saveSavedInquiries(deduped);
+
+    if (!deduped.length) {
+        result.innerHTML = `
+            <div class="track-empty">
+                <div class="track-empty-icon">💬</div>
+                <p>Your recent seller requests will show up here.</p>
+            </div>
+        `;
+        return;
+    }
+
+    result.innerHTML = deduped.map(renderInquiryCard).join('');
+    result.querySelectorAll('.request-copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const inquiryId = btn.dataset.requestId;
+            if (!inquiryId) return;
+            try {
+                await navigator.clipboard.writeText(inquiryId);
+                const original = btn.textContent;
+                btn.textContent = 'Copied';
+                setTimeout(() => { btn.textContent = original; }, 1200);
+            } catch {
+                alert(`Inquiry ID: ${inquiryId}`);
+            }
+        });
+    });
 }
 
 // ─── Cart Drawer ──────────────────────────────────────────────────────────────
@@ -252,7 +562,7 @@ window.processPayment = async function() {
         buyerPincode: document.getElementById('buyer-pincode')?.value.trim(),
         items: cart.map(i => ({
             productId: i.id, name: i.name, price: i.price,
-            qty: i.qty, sellerName: i.sellerName, image: i.image
+            qty: i.qty, sellerName: i.sellerName, sellerId: i.sellerId || '', image: i.image
         })),
         subtotal:      sub,
         deliveryFee:   DELIVERY_FEE,
@@ -271,8 +581,25 @@ window.processPayment = async function() {
         if (res.ok) {
             const data = await res.json();
             orderId = data.orderId || orderId;
+            saveLocalOrder(normalizeTrackedOrder({
+                ...payload,
+                orderId,
+                paymentStatus: data.paymentStatus || (method === 'cod' ? 'pending' : 'paid'),
+                status: 'placed',
+                createdAt: new Date().toISOString()
+            }));
         }
     } catch (_) { /* use client-generated orderId */ }
+
+    if (!loadSavedOrders().some(o => o.orderId === orderId)) {
+        saveLocalOrder(normalizeTrackedOrder({
+            ...payload,
+            orderId,
+            paymentStatus: method === 'cod' ? 'pending' : 'paid',
+            status: 'placed',
+            createdAt: new Date().toISOString()
+        }));
+    }
 
     // Small simulated delay for UX
     await new Promise(r => setTimeout(r, 1200));
@@ -283,6 +610,12 @@ window.processPayment = async function() {
     // Show success
     document.getElementById('placed-order-id').textContent = orderId;
     goPayStep(3);
+
+    localStorage.setItem('ln_last_order_id', orderId);
+    const trackerInput = document.getElementById('order-track-input');
+    if (trackerInput && !trackerInput.value.trim()) {
+        trackerInput.value = orderId;
+    }
 
     // Clear cart after success
     cart = [];
@@ -302,12 +635,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchBtn     = document.getElementById('search-btn');
     const pincodeInput  = document.getElementById('pincode-input');
     const categoryCards = document.querySelectorAll('.category-card');
+    const trackInput    = document.getElementById('order-track-input');
+    const trackBtn      = document.getElementById('track-order-btn');
+    const savedOrderId  = localStorage.getItem('ln_last_order_id');
     let currentCategory = null;
 
     // Init
     updateCartBadge(false);
     showSkeletons();
     fetchProducts();
+
+    if (trackInput && savedOrderId && !trackInput.value.trim()) {
+        trackInput.value = savedOrderId;
+    }
 
     function showSkeletons(count = 6) {
         productGrid.innerHTML = Array(count).fill(`
@@ -356,11 +696,13 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'product-card';
             const img = getImage(p);
             const pid = p._id || ('mock-' + Math.random().toString(36).slice(2));
+            const orderable = canOrderProduct(p.serviceMode);
             card.innerHTML = `
                 <div class="product-img-wrap">
                     <img src="${img}" class="product-img" alt="${p.name}" loading="lazy"
                          onerror="this.src='${CATEGORY_IMAGES.default}'">
                     <span class="product-badge">${p.category}</span>
+                    <span class="product-service-badge">${getServiceModeLabel(p.serviceMode)}</span>
                     <button class="product-fav" title="Save">🤍</button>
                 </div>
                 <div class="product-info">
@@ -369,18 +711,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="seller-dot"></span>
                         ${p.sellerName}
                     </div>
+                    <div class="product-service-line">${getServiceModeLabel(p.serviceMode)}</div>
                     <div class="product-footer">
                         <div>
                             <div class="product-price">₹${p.price}</div>
                             <div class="product-location">📍 Pincode ${p.location}</div>
                         </div>
                         <div style="display:flex;gap:0.4rem;align-items:center;">
-                            <button class="atc-btn" id="atc-${pid}"
-                                onclick="handleAddToCart(this,'${pid}','${p.name}',${p.price},'${img}','${p.sellerName}')">
-                                🛒 Add
-                            </button>
+                            ${orderable ? `
+                                <button class="atc-btn" id="atc-${pid}"
+                                    onclick="handleAddToCart(this,'${pid}','${p.name}',${p.price},'${img}','${p.sellerName}','${p.sellerId || ''}','${p.serviceMode || 'whatsapp'}')">
+                                    🛒 Add
+                                </button>
+                            ` : ''}
                             <button class="buy-btn"
-                                onclick="openContactModal('${p._id}','${p.sellerName}','${p.sellerPhone || '9876543210'}')">
+                                onclick="openContactModal('${p._id}','${p.sellerName}','${p.sellerPhone || '9876543210'}','${p.sellerId || ''}','${p.name}','${p.serviceMode || 'whatsapp'}')">
                                 Contact
                             </button>
                         </div>
@@ -416,20 +761,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getMockProducts(pin, cat) {
         const dummy = [
-            { _id:"m1", name:"Homemade Mango Pickle",  price:150, category:"Pickles",     location:"400001", sellerName:"Aarti's Kitchen",  sellerPhone:"9876543210" },
-            { _id:"m2", name:"Diwali Sweets Combo",    price:450, category:"Sweets",      location:"400001", sellerName:"Mithai House",      sellerPhone:"9123456780" },
-            { _id:"m3", name:"Organic Banana Chips",   price:80,  category:"Snacks",      location:"400002", sellerName:"Kerala Bites",      sellerPhone:"9876500001" },
-            { _id:"m4", name:"Hand-painted Diya Set",  price:200, category:"Handicrafts", location:"400001", sellerName:"Crafts by Neha",    sellerPhone:"9876500002" },
-            { _id:"m5", name:"Spicy Murukku",          price:120, category:"Snacks",      location:"400003", sellerName:"South Flavors",     sellerPhone:"9876500003" },
-            { _id:"m6", name:"Amla Pickle",            price:130, category:"Pickles",     location:"400002", sellerName:"Village Foods",     sellerPhone:"9876500004" }
+            { _id:"m1", name:"Homemade Mango Pickle",  price:150, category:"Pickles",     location:"400001", sellerName:"Aarti's Kitchen",  sellerPhone:"9876543210", sellerId:"NEST-1111", serviceMode:"pickup" },
+            { _id:"m2", name:"Diwali Sweets Combo",    price:450, category:"Sweets",      location:"400001", sellerName:"Mithai House",      sellerPhone:"9123456780", sellerId:"NEST-2222", serviceMode:"delivery" },
+            { _id:"m3", name:"Organic Banana Chips",   price:80,  category:"Snacks",      location:"400002", sellerName:"Kerala Bites",      sellerPhone:"9876500001", sellerId:"NEST-3333", serviceMode:"whatsapp" },
+            { _id:"m4", name:"Hand-painted Diya Set",  price:200, category:"Handicrafts", location:"400001", sellerName:"Crafts by Neha",    sellerPhone:"9876500002", sellerId:"NEST-4444", serviceMode:"pickup" },
+            { _id:"m5", name:"Spicy Murukku",          price:120, category:"Snacks",      location:"400003", sellerName:"South Flavors",     sellerPhone:"9876500003", sellerId:"NEST-5555", serviceMode:"delivery" },
+            { _id:"m6", name:"Amla Pickle",            price:130, category:"Pickles",     location:"400002", sellerName:"Village Foods",     sellerPhone:"9876500004", sellerId:"NEST-6666", serviceMode:"whatsapp" }
         ];
         return dummy.filter(p => (pin ? p.location === pin : true) && (cat ? p.category === cat : true));
     }
+
+    async function trackOrder() {
+        if (!trackInput) return;
+        const orderId = trackInput.value.trim().toUpperCase();
+        if (!/^LN-\d{6}$/.test(orderId)) {
+            renderTrackError('Please enter a valid order ID in the format LN-123456.');
+            return;
+        }
+
+        const result = document.getElementById('track-order-result');
+        if (result) {
+            result.innerHTML = `
+                <div class="track-empty">
+                    <div class="track-empty-icon">⏳</div>
+                    <p>Looking up order details...</p>
+                </div>
+            `;
+        }
+
+        try {
+            const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`);
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                const localOrder = findLocalOrder(orderId);
+                if (localOrder) {
+                    renderTrackedOrder(normalizeTrackedOrder(localOrder));
+                    return;
+                }
+                renderTrackError(data.message || 'Order not found. Check the order ID and try again.');
+                return;
+            }
+            const order = normalizeTrackedOrder(await res.json());
+            saveLocalOrder(order);
+            renderTrackedOrder(order);
+        } catch (_) {
+            const localOrder = findLocalOrder(orderId);
+            if (localOrder) {
+                renderTrackedOrder(normalizeTrackedOrder(localOrder));
+                return;
+            }
+            renderTrackError('Could not reach the server right now. Please try again in a moment.');
+        }
+    }
+
+    trackBtn?.addEventListener('click', trackOrder);
+    trackInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') trackOrder();
+    });
+
+    const refreshRequestsBtn = document.getElementById('refresh-requests-btn');
+    refreshRequestsBtn?.addEventListener('click', renderBuyerRequests);
+    renderBuyerRequests();
+
+    window.refreshBuyerRequests = renderBuyerRequests;
 });
 
 // ─── Add to Cart handler (global, called from inline onclick) ─────────────────
-window.handleAddToCart = function(btn, id, name, price, image, sellerName) {
-    addToCart({ id, name, price, image, sellerName });
+window.handleAddToCart = function(btn, id, name, price, image, sellerName, sellerId, serviceMode) {
+    addToCart({ id, name, price, image, sellerName, sellerId, serviceMode });
     btn.classList.add('added');
     btn.textContent = '✓ Added';
     setTimeout(() => {

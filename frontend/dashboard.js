@@ -44,6 +44,63 @@ const PRODUCT_NAME_IMAGES = [
     { keywords: ["embroidery", "crochet", "knitting"],  url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80" },
 ];
 
+function getServiceModeLabel(mode) {
+    const normalized = (mode || 'whatsapp').toLowerCase();
+    if (normalized === 'pickup') return '📍 Pickup only';
+    if (normalized === 'delivery') return '🚚 Delivery available';
+    return '💬 WhatsApp order';
+}
+
+function isDeliveryMode(mode) {
+    return (mode || 'whatsapp').toLowerCase() === 'delivery';
+}
+
+function shorten(text, max = 42) {
+    const value = String(text || '');
+    return value.length > max ? value.slice(0, max - 1) + '…' : value;
+}
+
+function loadLocalInquiries() {
+    try {
+        return JSON.parse(localStorage.getItem('ln_inquiries_local') || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function saveLocalInquiries(inquiries) {
+    localStorage.setItem('ln_inquiries_local', JSON.stringify(inquiries));
+}
+
+function updateLocalInquiryStatus(inquiryId, status) {
+    const inquiries = loadLocalInquiries().map(item => item.inquiryId === inquiryId ? { ...item, status } : item);
+    saveLocalInquiries(inquiries);
+}
+
+function updateLocalOrderStatus(orderId, status) {
+    try {
+        const orders = JSON.parse(localStorage.getItem('ln_orders_local') || '[]').map(item => item.orderId === orderId ? { ...item, status } : item);
+        localStorage.setItem('ln_orders_local', JSON.stringify(orders));
+    } catch {
+        // ignore local fallback errors
+    }
+}
+
+function nextOrderStatus(status) {
+    const current = (status || 'placed').toLowerCase();
+    if (current === 'placed') return 'processing';
+    if (current === 'processing') return 'dispatched';
+    if (current === 'dispatched') return 'delivered';
+    return 'delivered';
+}
+
+function getOrderActionLabel(status) {
+    const next = nextOrderStatus(status);
+    return next === 'delivered' && (status || '').toLowerCase() === 'delivered'
+        ? 'Delivered'
+        : `Mark ${next}`;
+}
+
 /**
  * Returns the best image URL for a product.
  * Priority: seller-provided URL → product name keyword match → category fallback.
@@ -83,12 +140,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const addForm = document.getElementById('add-product-form');
     const postBtn = document.getElementById('post-btn');
-    const grid    = document.getElementById('seller-product-grid');
+    const deliveryGrid = document.getElementById('seller-delivery-grid');
+    const directGrid   = document.getElementById('seller-direct-grid');
+    const ordersGrid   = document.getElementById('seller-orders-grid');
+    const requestsGrid = document.getElementById('seller-requests-grid');
 
     fetchMyProducts();
 
     async function fetchMyProducts() {
-        grid.innerHTML = `<div class="empty-dash" style="grid-column:1/-1"><div class="e-icon">⏳</div><p>Loading your products...</p></div>`;
+        const loadingMarkup = `<div class="empty-dash" style="grid-column:1/-1"><div class="e-icon">⏳</div><p>Loading your products...</p></div>`;
+        if (deliveryGrid) deliveryGrid.innerHTML = loadingMarkup;
+        if (directGrid) directGrid.innerHTML = loadingMarkup;
         try {
             const res = await fetch(`/api/products?sellerId=${encodeURIComponent(sellerId)}`);
             if (!res.ok) throw new Error('API error');
@@ -99,21 +161,47 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('stat-products').innerText = products.length;
             const totalInquiries = products.reduce((sum, p) => sum + (p.contactCount || 0), 0);
             document.getElementById('stat-inquiries').innerText = totalInquiries;
+            document.getElementById('stat-delivery').innerText = products.filter(p => isDeliveryMode(p.serviceMode)).length;
+            document.getElementById('stat-whatsapp').innerText = products.filter(p => !isDeliveryMode(p.serviceMode)).length;
         } catch (err) {
             console.error(err);
-            grid.innerHTML = `<div class="empty-dash" style="grid-column:1/-1"><div class="e-icon">⚠️</div><p>Could not load products. Is the server running?</p></div>`;
+            const errorMarkup = `<div class="empty-dash" style="grid-column:1/-1"><div class="e-icon">⚠️</div><p>Could not load products. Is the server running?</p></div>`;
+            if (deliveryGrid) deliveryGrid.innerHTML = errorMarkup;
+            if (directGrid) directGrid.innerHTML = errorMarkup;
+        } finally {
+            await fetchSellerInbox();
         }
     }
 
     function getImage(p) { return getProductImage(p); }
 
     function renderProducts(products) {
-        grid.innerHTML = '';
+        if (deliveryGrid) deliveryGrid.innerHTML = '';
+        if (directGrid) directGrid.innerHTML = '';
         if (!products.length) {
-            grid.innerHTML = `<div class="empty-dash" style="grid-column:1/-1">
+            const empty = `<div class="empty-dash" style="grid-column:1/-1">
                 <div class="e-icon">📦</div>
                 <h3>No products yet</h3>
                 <p>Use the form on the left to add your first product!</p>
+            </div>`;
+            if (deliveryGrid) deliveryGrid.innerHTML = empty;
+            if (directGrid) directGrid.innerHTML = empty;
+            return;
+        }
+
+        const deliveryProducts = products.filter(p => isDeliveryMode(p.serviceMode));
+        const directProducts = products.filter(p => !isDeliveryMode(p.serviceMode));
+
+        renderProductGroup(deliveryGrid, deliveryProducts);
+        renderProductGroup(directGrid, directProducts);
+    }
+
+    function renderProductGroup(grid, products) {
+        if (!grid) return;
+        if (!products.length) {
+            grid.innerHTML = `<div class="empty-dash" style="grid-column:1/-1">
+                <div class="e-icon">🪧</div>
+                <p>No listings in this category yet.</p>
             </div>`;
             return;
         }
@@ -127,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${getImage(p)}" class="product-img" alt="${p.name}" loading="lazy"
                          onerror="this.src='${CATEGORY_IMAGES.default}'">
                     <span class="product-badge">${p.category}</span>
+                    <span class="product-service-badge">${getServiceModeLabel(p.serviceMode)}</span>
                 </div>
                 <div class="product-info">
                     <h3 class="product-name">${p.name}</h3>
@@ -152,6 +241,164 @@ document.addEventListener('DOMContentLoaded', () => {
             card.querySelector('.delete-product-btn').addEventListener('click', () => deleteProduct(p._id, p.name));
             grid.appendChild(card);
         });
+    }
+
+    async function fetchSellerInbox() {
+        try {
+            const [ordersRes, requestsRes] = await Promise.all([
+                fetch(`/api/orders?sellerId=${encodeURIComponent(sellerId)}`),
+                fetch(`/api/inquiries?sellerId=${encodeURIComponent(sellerId)}`)
+            ]);
+
+            const orders = ordersRes.ok ? await ordersRes.json() : [];
+            let requests = [];
+            const requestsType = requestsRes.headers.get('content-type') || '';
+            if (requestsRes.ok && requestsType.includes('application/json')) {
+                requests = await requestsRes.json();
+            } else {
+                requests = [];
+            }
+
+            const localRequests = loadLocalInquiries().filter(req => req.sellerId === sellerId);
+            const mergedRequests = [...requests, ...localRequests].reduce((acc, req) => {
+                if (!acc.some(item => item.inquiryId === req.inquiryId)) acc.push(req);
+                return acc;
+            }, []);
+
+            document.getElementById('stat-orders').innerText = orders.length;
+            document.getElementById('stat-requests').innerText = mergedRequests.length;
+
+            renderOrders(orders);
+            renderRequests(mergedRequests);
+        } catch (err) {
+            console.error(err);
+            if (ordersGrid) ordersGrid.innerHTML = `<div class="empty-dash"><div class="e-icon">⚠️</div><p>Could not load incoming orders.</p></div>`;
+            const localRequests = loadLocalInquiries().filter(req => req.sellerId === sellerId);
+            if (localRequests.length) {
+                document.getElementById('stat-requests').innerText = localRequests.length;
+                renderRequests(localRequests);
+                return;
+            }
+            if (requestsGrid) requestsGrid.innerHTML = `<div class="empty-dash"><div class="e-icon">⚠️</div><p>Could not load incoming requests.</p></div>`;
+        }
+    }
+
+    function renderOrders(orders) {
+        if (!ordersGrid) return;
+        const sellerOrders = orders
+            .map(order => ({
+                ...order,
+                items: (order.items || []).filter(item => item.sellerId === sellerId)
+            }))
+            .filter(order => order.items.length > 0);
+
+        if (!sellerOrders.length) {
+            ordersGrid.innerHTML = `<div class="empty-dash"><div class="e-icon">📭</div><p>No delivery orders yet.</p></div>`;
+            return;
+        }
+
+        ordersGrid.innerHTML = sellerOrders.map(order => `
+            <div class="activity-card">
+                <div class="activity-head">
+                    <div>
+                        <div class="activity-title">${order.orderId}</div>
+                        <div class="activity-meta">Buyer: ${order.buyerName} · ${order.buyerPhone}</div>
+                    </div>
+                    <div class="activity-tag">${order.status || 'placed'}</div>
+                </div>
+                <div class="activity-items">
+                    ${order.items.map(item => `
+                        <div class="activity-item">
+                            <div class="left">
+                                <div class="name">${item.name}</div>
+                                <div class="sub">${item.qty} × ₹${item.price}</div>
+                            </div>
+                            <div class="right">₹${item.qty * item.price}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="activity-meta">Delivery to: ${shorten(order.buyerAddress, 72)} · Pincode ${order.buyerPincode}</div>
+                <div class="activity-actions">
+                    <span class="activity-btn secondary">Payment: ${(order.paymentStatus || 'pending').toUpperCase()}</span>
+                    <span class="activity-btn secondary">Method: ${(order.paymentMethod || '').toUpperCase()}</span>
+                    <button class="activity-btn primary" data-order-id="${order.orderId}" data-order-status="${order.status || 'placed'}" ${((order.status || '').toLowerCase() === 'delivered') ? 'disabled' : ''}>${getOrderActionLabel(order.status)}</button>
+                </div>
+            </div>
+        `).join('');
+
+        ordersGrid.querySelectorAll('button[data-order-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                updateOrderStatus(btn.dataset.orderId, nextOrderStatus(btn.dataset.orderStatus));
+            });
+        });
+    }
+
+    function renderRequests(requests) {
+        if (!requestsGrid) return;
+        if (!requests.length) {
+            requestsGrid.innerHTML = `<div class="empty-dash"><div class="e-icon">✉️</div><p>No incoming requests yet.</p></div>`;
+            return;
+        }
+
+        requestsGrid.innerHTML = requests.map(req => `
+            <div class="activity-card">
+                <div class="activity-head">
+                    <div>
+                        <div class="activity-title">${req.productName}</div>
+                        <div class="activity-meta">${req.sellerName} · ${req.sellerPhone || 'No phone saved'}</div>
+                    </div>
+                    <div class="activity-tag inquiry">${getServiceModeLabel(req.serviceMode)}</div>
+                </div>
+                <div class="activity-meta">Inquiry ID: ${req.inquiryId}</div>
+                <div class="activity-actions">
+                    <a class="activity-btn primary" href="https://wa.me/91${req.sellerPhone || ''}" target="_blank" rel="noreferrer">WhatsApp</a>
+                    <button class="activity-btn secondary" data-inquiry-id="${req.inquiryId}" data-inquiry-status="${req.status || 'new'}" ${((req.status || '').toLowerCase() === 'closed') ? 'disabled' : ''}>${(req.status || 'new') === 'new' ? 'Mark Contacted' : 'Mark Closed'}</button>
+                    <span class="activity-btn secondary">${shorten(req.createdAt ? new Date(req.createdAt).toLocaleString() : 'Recent', 26)}</span>
+                </div>
+            </div>
+        `).join('');
+
+        requestsGrid.querySelectorAll('button[data-inquiry-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const current = btn.dataset.inquiryStatus || 'new';
+                const next = current === 'new' ? 'contacted' : 'closed';
+                updateInquiryStatus(btn.dataset.inquiryId, next);
+            });
+        });
+    }
+
+    async function updateOrderStatus(orderId, status) {
+        try {
+            const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+
+            if (!res.ok) throw new Error('Failed to update order status');
+            updateLocalOrderStatus(orderId, status);
+            await fetchSellerInbox();
+        } catch (err) {
+            console.error(err);
+            alert('Could not update order status.');
+        }
+    }
+
+    async function updateInquiryStatus(inquiryId, status) {
+        try {
+            const res = await fetch(`/api/inquiries/${encodeURIComponent(inquiryId)}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+
+            if (!res.ok) throw new Error('Failed to update inquiry status');
+            updateLocalInquiryStatus(inquiryId, status);
+            await fetchSellerInbox();
+        } catch (err) {
+            console.error(err);
+            alert('Could not update request status.');
+        }
     }
 
     // Delete a product
@@ -194,7 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sellerName:  sellerName,
             sellerPhone: sellerPhone || '',
             sellerId:    sellerId,
-            description: ''
+            description: '',
+            serviceMode: document.getElementById('p-service-mode').value
         };
 
         try {

@@ -13,6 +13,27 @@
         .dash-stat-card .lbl { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
         .empty-dash { text-align: center; padding: 3rem; color: var(--text-muted); }
         .empty-dash .e-icon { font-size: 3rem; }
+        .section-note { color: var(--text-secondary); margin: -0.7rem 0 1rem; font-size: 0.92rem; }
+        .listing-section { margin-bottom: 2rem; }
+        .listing-section h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.8rem; }
+        .listing-section .section-note { margin: 0 0 1rem; }
+        .activity-grid { display: grid; gap: 1rem; }
+        .activity-card { background: white; border-radius: var(--radius-lg); padding: 1.1rem 1.2rem; border: 1px solid var(--border); box-shadow: var(--shadow-xs); display: grid; gap: 0.85rem; }
+        .activity-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+        .activity-title { font-weight: 800; font-size: 1rem; color: var(--text-primary); }
+        .activity-meta { font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.15rem; }
+        .activity-tag { display: inline-flex; align-items: center; padding: 0.35rem 0.7rem; border-radius: 999px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; background: rgba(42,122,59,0.1); color: var(--secondary); }
+        .activity-tag.inquiry { background: rgba(224,123,57,0.1); color: var(--primary); }
+        .activity-items { display: grid; gap: 0.55rem; }
+        .activity-item { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0.8rem; background: var(--bg-color); border: 1px solid var(--border); border-radius: var(--radius); }
+        .activity-item .left { min-width: 0; }
+        .activity-item .name { font-weight: 700; color: var(--text-primary); }
+        .activity-item .sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.15rem; }
+        .activity-item .right { font-weight: 800; color: var(--primary); flex-shrink: 0; }
+        .activity-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .activity-btn { border: none; border-radius: 999px; padding: 0.55rem 0.9rem; font-weight: 700; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.82rem; }
+        .activity-btn.primary { background: var(--primary); color: white; text-decoration: none; display: inline-flex; align-items: center; }
+        .activity-btn.secondary { background: var(--bg-color); color: var(--text-primary); border: 1px solid var(--border); }
     </style>
 </head>
 <body>
@@ -53,6 +74,14 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <label>Service Mode</label>
+                    <select id="p-service-mode" required>
+                        <option value="whatsapp">💬 WhatsApp order</option>
+                        <option value="pickup">📍 Pickup only</option>
+                        <option value="delivery">🚚 Delivery available</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Image URL (Optional)</label>
                     <input type="url" id="p-image" placeholder="https://...">
                 </div>
@@ -89,10 +118,48 @@
                     <div class="num" id="stat-inquiries" style="color:var(--secondary)">—</div>
                     <div class="lbl">Total Buyer Contacts</div>
                 </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-delivery" style="color:var(--secondary)">—</div>
+                    <div class="lbl">Delivery Ready</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-whatsapp" style="color:var(--accent)">—</div>
+                    <div class="lbl">Direct Contact Listings</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-orders" style="color:var(--secondary)">—</div>
+                    <div class="lbl">Incoming Orders</div>
+                </div>
+                <div class="dash-stat-card">
+                    <div class="num" id="stat-requests" style="color:var(--accent)">—</div>
+                    <div class="lbl">Incoming Requests</div>
+                </div>
             </div>
 
             <h2>Your Products</h2>
-            <div id="seller-product-grid" class="product-grid"></div>
+            <p class="section-note">Listings are split so you can see which products support delivery and which should be handled by WhatsApp or pickup.</p>
+
+            <div class="listing-section">
+                <h3>🚚 Delivery Available</h3>
+                <div id="seller-delivery-grid" class="product-grid"></div>
+            </div>
+
+            <div class="listing-section">
+                <h3>💬 WhatsApp / Pickup</h3>
+                <div id="seller-direct-grid" class="product-grid"></div>
+            </div>
+
+            <div class="listing-section">
+                <h3>📥 Incoming Orders</h3>
+                <p class="section-note">These are delivery orders placed by buyers for products you marked as delivery available.</p>
+                <div id="seller-orders-grid" class="activity-grid"></div>
+            </div>
+
+            <div class="listing-section">
+                <h3>✉️ Incoming Requests</h3>
+                <p class="section-note">These are WhatsApp/pickup inquiries buyers sent from the product page.</p>
+                <div id="seller-requests-grid" class="activity-grid"></div>
+            </div>
         </main>
     </div>
 

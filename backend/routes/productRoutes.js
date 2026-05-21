@@ -30,19 +30,24 @@ router.get('/', async (req, res) => {
 // POST add a new product
 router.post('/', async (req, res) => {
     try {
-        const { name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, description } = req.body;
+        const { name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, serviceMode, description } = req.body;
 
         // Basic validation
         if (!name || !price || !category || !location || !sellerName || !sellerId) {
             return res.status(400).json({ message: 'Missing required fields: name, price, category, location, sellerName, sellerId' });
         }
 
+        const allowedModes = ['pickup', 'whatsapp', 'delivery'];
+        const normalizedMode = allowedModes.includes((serviceMode || '').toLowerCase())
+            ? serviceMode.toLowerCase()
+            : 'whatsapp';
+
         if (store.dbConnected) {
-            const newProduct = new Product({ name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, description });
+            const newProduct = new Product({ name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, serviceMode: normalizedMode, description });
             const saved = await newProduct.save();
             res.status(201).json(saved);
         } else {
-            const newProduct = { _id: 'm' + Date.now(), name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, description, contactCount: 0 };
+            const newProduct = { _id: 'm' + Date.now(), name, price, category, imageUrl, location, sellerName, sellerPhone, sellerId, serviceMode: normalizedMode, description, contactCount: 0 };
             store.products.unshift(newProduct);
             res.status(201).json(newProduct);
         }

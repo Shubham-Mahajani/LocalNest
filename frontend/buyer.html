@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop Local | LocalNest</title>
-    <meta name="description" content="Discover homemade and local products near you. Search by pincode and connect with nearby sellers.">
+    <meta name="description" content="Discover homemade and local products near you. Search by pincode, connect directly with nearby sellers, and order only when delivery is available.">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -258,10 +258,10 @@
                 <div class="hero-full-content">
                     <div class="hero-badge-white">🌿 Hyper-Local · Homemade · Trusted</div>
                     <h1>Your Neighbour's<br>Kitchen is a <span class="highlight">Shop</span></h1>
-                    <p>Discover authentic snacks, artisanal pickles, festival sweets & handcrafted goods — all made locally, delivered with love.</p>
+                    <p>Discover authentic snacks, artisanal pickles, festival sweets & handcrafted goods from nearby sellers. Start by contacting the seller directly, and order only when delivery is supported.</p>
                     <div class="hero-cta-row">
                         <button class="primary-btn" style="font-size:1rem;" onclick="document.querySelector('.categories').scrollIntoView({behavior:'smooth'})">
-                            Shop Now 🛒
+                            Browse Nearby 🛒
                         </button>
                         <button class="btn-outline-white" onclick="document.querySelector('.how-section').scrollIntoView({behavior:'smooth'})">
                             How it works ↓
@@ -321,7 +321,7 @@
         <!-- ─── HOW IT WORKS ─── -->
         <section class="how-section" id="how-section">
             <h2>How LocalNest Works</h2>
-            <p class="sub">Three simple steps to discover and connect with local sellers</p>
+            <p class="sub">Three simple steps to discover products and connect with nearby sellers</p>
             <div class="how-steps">
                 <div class="how-step">
                     <div class="step-num">1</div>
@@ -333,13 +333,13 @@
                     <div class="step-num">2</div>
                     <span class="step-icon">🔍</span>
                     <h3>Browse & Choose</h3>
-                    <p>Filter by category — Snacks, Sweets, Pickles or Handicrafts — and pick the product you love.</p>
+                    <p>Filter by category — Snacks, Sweets, Pickles or Handicrafts — and pick the local product you love.</p>
                 </div>
                 <div class="how-step">
                     <div class="step-num">3</div>
-                    <span class="step-icon">💳</span>
-                    <h3>Add to Cart &amp; Pay</h3>
-                    <p>Add items to your cart and checkout securely right here — UPI, card, net banking or cash on delivery.</p>
+                    <span class="step-icon">💬</span>
+                    <h3>Contact or Order</h3>
+                    <p>Message the seller for pickup or WhatsApp orders. If they support delivery, you can place an order from the same page.</p>
                 </div>
             </div>
         </section>
@@ -350,7 +350,7 @@
             <div class="trust-item"><span>🔒</span> No Hidden Charges</div>
             <div class="trust-item"><span>📍</span> Hyperlocal Discovery</div>
             <div class="trust-item"><span>🤝</span> Direct Seller Contact</div>
-            <div class="trust-item"><span>💚</span> Support Local MSMEs</div>
+            <div class="trust-item"><span>💚</span> Delivery Only When Available</div>
         </div>
 
         <!-- ─── CATEGORIES ─── -->
@@ -393,7 +393,7 @@
             </div>
             <div class="why-content">
                 <h2>Why Buy <span style="color:var(--primary)">Local?</span></h2>
-                <p>Every product on LocalNest is made by a real person in your community — with care, tradition, and quality you can taste.</p>
+                <p>Every product on LocalNest comes from a real seller in your community — with care, tradition, and a direct connection that works even without full delivery support.</p>
                 <div class="why-points">
                     <div class="why-point">
                         <div class="why-point-icon">🌿</div>
@@ -415,6 +415,49 @@
                             <h4>Strengthen Your Community</h4>
                             <p>Every purchase supports a local family business and keeps the neighbourhood economy growing.</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- â”€â”€â”€ ORDER TRACKER â”€â”€â”€ -->
+        <section class="track-section" id="track-section">
+            <div class="track-card">
+                <div class="track-copy">
+                    <div class="track-badge">Order Lookup</div>
+                    <h2>Track Delivery Orders</h2>
+                    <p>Enter your `orderId` to check the latest status, payment state, and item summary for delivery-enabled purchases.</p>
+                </div>
+                <div class="track-form">
+                    <input type="text" id="order-track-input" class="track-input" placeholder="e.g. LN-123456" maxlength="9">
+                    <button id="track-order-btn" class="track-btn">Track Order</button>
+                    <div class="track-note">Tip: only delivery-enabled purchases generate a trackable order ID.</div>
+                </div>
+                <div id="track-order-result" class="track-result">
+                    <div class="track-empty">
+                        <div class="track-empty-icon">ðŸ“¦</div>
+                        <p>Enter an order ID to see tracking details here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- â”€â”€â”€ MY REQUESTS â”€â”€â”€ -->
+        <section class="requests-section" id="requests-section">
+            <div class="track-card requests-card">
+                <div class="track-copy">
+                    <div class="track-badge requests-badge">My Requests</div>
+                    <h2>Buyer Requests</h2>
+                    <p>Every WhatsApp or pickup request you send from this browser will appear here. You can see whether the seller has contacted you back or closed the request.</p>
+                </div>
+                <div class="track-form requests-side">
+                    <button id="refresh-requests-btn" class="track-btn requests-refresh-btn" type="button">Refresh Requests</button>
+                    <div class="track-note">Tip: requests update from the seller dashboard when the backend is online.</div>
+                </div>
+                <div id="buyer-requests-result" class="track-result">
+                    <div class="track-empty">
+                        <div class="track-empty-icon">💬</div>
+                        <p>Your recent seller requests will show up here.</p>
                     </div>
                 </div>
             </div>

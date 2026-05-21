@@ -9,6 +9,7 @@ const productSchema = new mongoose.Schema({
     sellerName:   { type: String, required: true },
     sellerPhone:  { type: String, default: '' },
     sellerId:     { type: String, required: true }, // NEST-XXXX
+    serviceMode:  { type: String, enum: ['pickup', 'whatsapp', 'delivery'], default: 'whatsapp' },
     description:  { type: String, default: '' },
     contactCount: { type: Number, default: 0 }      // how many buyers clicked Contact
 }, { timestamps: true });
